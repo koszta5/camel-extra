@@ -47,3 +47,4 @@ atlassian-ide-plugin.xml
 **/target/*
 **/.gitignore
 .gitignore
+components/camel-wmq/src/generated
