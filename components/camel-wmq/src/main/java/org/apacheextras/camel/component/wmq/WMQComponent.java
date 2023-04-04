@@ -17,15 +17,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.DefaultComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ibm.mq.MQException;
 import com.ibm.mq.MQQueueManager;
 import com.ibm.msg.client.commonservices.j2se.workqueue.WorkQueueManagerImplementation;
 import com.ibm.msg.client.commonservices.workqueue.WorkQueueManager;
@@ -34,6 +37,8 @@ import com.ibm.msg.client.commonservices.workqueue.WorkQueueManager;
 public class WMQComponent extends DefaultComponent {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(WMQComponent.class);
+
+    private Set<MQQueueManager> createdManagers = new HashSet<>();
 
     @Override
     public WMQEndpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
@@ -114,7 +119,9 @@ public class WMQComponent extends DefaultComponent {
                     (String) qmProperties.get(name + ".hostname"),
                     (String) qmProperties.get(name + ".port"),
                     (String) qmProperties.get(name + ".channel")});
-            return new MQQueueManager(name, connectionProperties);
+            MQQueueManager mqQueueManager = new MQQueueManager(name, connectionProperties);
+            createdManagers.add(mqQueueManager);
+            return mqQueueManager;
         } catch (Exception e) {
             throw new IllegalStateException("Can't create MQQueueManager", e);
         }
@@ -123,6 +130,15 @@ public class WMQComponent extends DefaultComponent {
     @Override
     public void stop()  {
         try {
+            createdManagers.stream()
+                    .forEach(m -> {
+                        try {
+                            m.close();
+                            m.runFinalization();
+                        } catch (MQException e) {
+                            LOGGER.warn("Could not close QueueManager correctly", e);
+                        }
+                    });
             WorkQueueManager.close();
             interruptMangerThread();
         } catch (Exception e) {
