@@ -13,6 +13,18 @@
  */
 package org.apacheextras.camel.component.wmq;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.function.Function;
+
+import org.apache.camel.Exchange;
+import org.apache.camel.Message;
+import org.apache.camel.Processor;
+import org.apache.camel.SuspendableService;
+import org.apache.camel.support.ScheduledPollConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.ibm.mq.MQDestination;
 import com.ibm.mq.MQGetMessageOptions;
 import com.ibm.mq.MQMessage;
@@ -22,17 +34,6 @@ import com.ibm.mq.constants.MQConstants;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.MQRFH2;
-import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-import org.apache.camel.Processor;
-import org.apache.camel.SuspendableService;
-import org.apache.camel.support.ScheduledPollConsumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.function.Function;
 
 public class WMQConsumer extends ScheduledPollConsumer implements SuspendableService {
 
@@ -196,7 +197,7 @@ public class WMQConsumer extends ScheduledPollConsumer implements SuspendableSer
         }
 
         if (exchange.getException() != null) {
-            getExceptionHandler().handleException("Error processing exchange", exchange, exchange.getException());
+			throw exchange.getException();
         }
 
         return 1;
