@@ -133,8 +133,8 @@ public class WMQComponent extends DefaultComponent {
             createdManagers.stream()
                     .forEach(m -> {
                         try {
+                            m.disconnect();
                             m.close();
-                            m.runFinalization();
                         } catch (MQException e) {
                             LOGGER.warn("Could not close QueueManager correctly", e);
                         }
